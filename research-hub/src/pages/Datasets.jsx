@@ -235,9 +235,24 @@ const Datasets = () => {
                 : "bg-white text-gray-600 border-gray-200 hover:border-[#5F6FFF] hover:text-[#5F6FFF]"
             }`}
           >
-            {f === "all"
-              ? "🗂 All"
-              : `${DISEASE_CONFIG[f].emoji} ${DISEASE_CONFIG[f].label}`}
+            {f === "all" ? (
+              <span className="flex items-center gap-2">
+                🗂 <span>All</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Lottie
+                  animationData={DISEASE_CONFIG[f].animation}
+                  loop
+                  autoplay
+                  style={{
+                    width: 22,
+                    height: 22,
+                  }}
+                />
+                <span>{DISEASE_CONFIG[f].label}</span>
+              </span>
+            )}
           </button>
         ))}
       </div>

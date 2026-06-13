@@ -57,7 +57,11 @@ const CONTRACT_ABI = [
 ];
 
 // ── Direct contract verification via Ethers.js ────────────────────────────────
-const verifyViaContract = async (predictionId, blockchainHash) => {
+const verifyViaContract = async (
+  predictionId,
+  blockchainHash,
+  blockchainTxHash,
+) => {
   try {
     const { ethers } = await import("ethers");
     const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
@@ -80,7 +84,9 @@ const verifyViaContract = async (predictionId, blockchainHash) => {
         : null,
       storedBy,
       source: "contract", // verified directly on-chain — no backend involved
-      etherscanUrl: `https://sepolia.etherscan.io/address/${CONTRACT_ADDRESS}`,
+      etherscanUrl: blockchainTxHash
+        ? `https://sepolia.etherscan.io/tx/${blockchainTxHash}`
+        : `https://sepolia.etherscan.io/address/${CONTRACT_ADDRESS}`,
     };
   } catch (err) {
     console.warn(
@@ -123,7 +129,11 @@ export default function BlockchainBadge({ predictionId, blockchain }) {
       // Try direct contract call first — trustless verification
       let result = null;
       if (CONTRACT_ADDRESS && SEPOLIA_RPC_URL && blockchain?.hash) {
-        result = await verifyViaContract(predictionId, blockchain.hash);
+        result = await verifyViaContract(
+          predictionId,
+          blockchain.hash,
+          blockchain.txHash,
+        );
       }
 
       // Fall back to backend if contract call failed

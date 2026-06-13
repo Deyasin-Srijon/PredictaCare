@@ -299,7 +299,7 @@ export default function MyConsultations() {
                                 margin: "4px 0 0",
                               }}
                             >
-                              Dr. {c.doctorName}
+                               {c.doctorName}
                             </p>
                           )}
                         </div>

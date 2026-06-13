@@ -38,11 +38,11 @@ const init = () => {
 // ── Unchanged from your version ───────────────────────────────────────────────
 export const buildPredictionHash = (data) => {
   const normalizedPayload = {
-    userId:           String(data.userId).trim(),
-    disease:          String(data.disease).trim().toLowerCase(),
+    userId: String(data.userId).trim(),
+    disease: String(data.disease).trim().toLowerCase(),
     predictionResult: String(data.predictionResult).trim().toLowerCase(),
-    probability:      Number(data.probability).toFixed(6),
-    tier:             String(data.tier).trim().toLowerCase(),
+    probability: Number(data.probability).toFixed(6),
+    tier: String(data.tier).trim().toLowerCase(),
   };
 
   const payload = JSON.stringify(normalizedPayload);
@@ -63,8 +63,8 @@ export const buildPredictionHash = (data) => {
 export const storePredictionOnChain = async (
   predictionId,
   hashHex,
-  ipfsCid = "",       // ✅ CHANGE 1: new parameter
-  queueOnFail = false
+  ipfsCid = "", // ✅ CHANGE 1: new parameter
+  queueOnFail = false,
 ) => {
   init();
   if (!contract) return null;
@@ -72,34 +72,49 @@ export const storePredictionOnChain = async (
   try {
     const existing = await getPredictionFromChain(predictionId);
     if (existing) {
-      console.log(`Already on-chain: ${predictionId} — skipping duplicate store`);
+      console.log(
+        `Already on-chain: ${predictionId} — skipping duplicate store`,
+      );
       return { txHash: null, blockNumber: null, alreadyStored: true };
     }
 
     // ✅ CHANGE 2: Pass ipfsCid as 3rd argument to updated smart contract
-    const tx = await contract.storePrediction(predictionId, hashHex, ipfsCid || "");
+    const tx = await contract.storePrediction(
+      predictionId,
+      hashHex,
+      ipfsCid || "",
+    );
     console.log(`Tx sent: ${tx.hash}`);
     const receipt = await tx.wait();
     console.log(`On-chain: block ${receipt.blockNumber}, tx ${tx.hash}`);
     return {
-      txHash:        tx.hash,
-      blockNumber:   receipt.blockNumber,
+      txHash: tx.hash,
+      blockNumber: receipt.blockNumber,
       alreadyStored: false,
     };
   } catch (err) {
     if (err.message.includes("prediction already stored")) {
-      console.log(`Duplicate revert caught for ${predictionId} — treating as success`);
+      console.log(
+        `Duplicate revert caught for ${predictionId} — treating as success`,
+      );
       return { txHash: null, blockNumber: null, alreadyStored: true };
     }
     console.error("Blockchain store failed (non-fatal):", err.message);
 
     if (queueOnFail) {
       try {
-        const { default: PendingBlockchain } = await import("../models/pendingBlockchainModel.js");
+        const { default: PendingBlockchain } =
+          await import("../models/pendingBlockchainModel.js");
         await PendingBlockchain.findOneAndUpdate(
           { predictionId },
-          { predictionId, hashHex, ipfsCid, lastError: err.message, lastAttempt: new Date() },
-          { upsert: true, new: true }
+          {
+            predictionId,
+            hashHex,
+            ipfsCid,
+            lastError: err.message,
+            lastAttempt: new Date(),
+          },
+          { upsert: true, new: true },
         );
         console.log(`Queued for retry: ${predictionId}`);
       } catch (queueErr) {
@@ -126,9 +141,11 @@ export const verifyPredictionOnChain = async (predictionId, hashHex) => {
     );
     return {
       valid,
-      timestamp: valid ? new Date(Number(timestamp) * 1000).toISOString() : null,
-      storedBy:  valid ? storedBy : null,
-      reason:    valid ? null : "Hash mismatch or not yet stored",
+      timestamp: valid
+        ? new Date(Number(timestamp) * 1000).toISOString()
+        : null,
+      storedBy: valid ? storedBy : null,
+      reason: valid ? null : "Hash mismatch or not yet stored",
     };
   } catch (err) {
     console.error("Verify failed:", err.message);
@@ -153,7 +170,7 @@ export const getPredictionFromChain = async (predictionId) => {
     if (!exists) return null;
     return {
       hash,
-      ipfsCid:   ipfsCid || null,   // ✅ CHANGE 3: now returned
+      ipfsCid: ipfsCid || null, // ✅ CHANGE 3: now returned
       timestamp: new Date(Number(timestamp) * 1000).toISOString(),
       storedBy,
     };
